@@ -50,7 +50,7 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 #### Analisis de impacto economico
 -   De Capex A Opex: No habría inversión inicial en servidores, licencias ni centro de datos; solo un gasto mensual variable ligado a las ventas.
 -   Pago por uso y escalado a cero: Fuera de campaña, los servicios bajan a 0 réplicas y prácticamente no generan coste de cómputo.
-Menos coste operativo: el proveedor asume parches, backups y hardware de la base de datos, por lo que no hace falta un administrador de sistemas dedicado.
+-   Menos coste operativo: el proveedor asume parches, backups y hardware de la base de datos, por lo que no hace falta un administrador de sistemas dedicado.
 -   Coste estimado: para un trafico bajo: Container Apps el cual contiene una cuota gratuita, una base de datos **Revisar azure pricing** 
 -   Riesgo económico a vigilar: El escalado ilimitado puede disparar la factura; se fijaran un máximo de replicas y alertas de presupuesto en azure cost management.
 
@@ -67,11 +67,10 @@ Menos coste operativo: el proveedor asume parches, backups y hardware de la base
 | Infraestructura como código  | Terraform |
 | CI/CD  | GitHub Actions |
 | Observabilidad  | Azure Monitor + Log Analytics |
-
-
-
+<br>
+<br>
 ![alt text](<Arquitectura cc.drawio.png>)
-
+<br>
 ### 5.Especificación de API REST
 
 ##### Servicio "catalog-service"
