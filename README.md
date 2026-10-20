@@ -49,6 +49,8 @@ Menos coste operativo: el proveedor asume parches, backups y hardware de la base
 
 ### 4.Diagrama de arquitectura
 
+![alt text](<Arquitectura cc.drawio.png>)
+
 ### 5.Especificación de API REST
 
 ##### Servicio "catalog-service"
