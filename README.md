@@ -1,5 +1,6 @@
 
 ### 1. Descripción del dominio
+
 #### Problema de negocio
 Tienda+ es una pequeña tienda de productos locales, quiere vender por internet sin comprar ni mantener servidores propios. Sus ventas son muy irregulares: pocas ventas entre semanas y picos fuertes en épocas de campañas puntuales (Black Friday, navidad, rebajas). Con un servidor propio tendría que dimensionar para sus momentos pico y después pagar por los mismos servicios durante todo el año sin utilizar toda la capacidad comprada; con la nube paga solo por lo que usa y escala automáticamente en los picos.
 El problema de negocio no es “gestionar productos de la tienda” sino más bien vender sin sobrevender: cuando hay muchos clientes y compran a la vez el mismo producto, el sistema debe garantizar que no se acepten pedidos sin stock real.
@@ -38,7 +39,13 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 
 ### 3.Mapeo de actores NIST SP 500-292
 
-
+| Rol | Responsable | Responsabilidades |
+|---|---|---|
+| **Consumidor (Cloud Consumer)** | El desarrollador de TIENDA+ (en nombre del comercio). Los compradores, a su vez, consumen TIENDA+ como SaaS. | Contrata los servicios de Azure, acepta sus SLA, gestiona la suscripción y paga por uso. |
+| **Proveedor (Cloud Provider)** | Microsoft Azure | Proporciona y opera la infraestructura física, la plataforma de contenedores, la base de datos y la facturación. |
+| **Intermediario (Cloud Broker)** | GitHub Actions | Agregación: combina el repositorio, la integración continua, Container Registry y el despliegue en Azure en un único flujo automatizado. |
+| **Auditor (Cloud Auditor)** | El profesorado | Evalúa de forma independiente la seguridad, el cumplimiento y el rendimiento mediante pruebas objetivas (repositorio, capturas, despliegue). |
+| **Operador (Cloud Carrier)** | Los operadores de Internet y la red de Microsoft | Proporcionan la conectividad entre los compradores y Azure. |
 
 #### Analisis de impacto economico
 -   De Capex A Opex: No habría inversión inicial en servidores, licencias ni centro de datos; solo un gasto mensual variable ligado a las ventas.
@@ -48,6 +55,18 @@ Menos coste operativo: el proveedor asume parches, backups y hardware de la base
 -   Riesgo económico a vigilar: El escalado ilimitado puede disparar la factura; se fijaran un máximo de replicas y alertas de presupuesto en azure cost management.
 
 ### 4.Diagrama de arquitectura
+
+#### Tecnologias a aplicar
+| Elemento | Tecnología |
+|---|---|
+| Lenguaje / framework | Python 3.12 + FastAPI |
+| Contenedores | Docker + Docker Compose (entorno local) |
+| Cómputo en la nube | Azure Container Apps |
+| Registro de imágenes | Azure Container Registry (ACR) |
+| Persistencia | Azure SQL Database (SQL Server gestionado) — 1 base de datos por microservicio |
+| Infraestructura como código (Hito 3) | Terraform |
+| CI/CD (Hitos 2 y 4) | GitHub Actions |
+| Observabilidad (Hito 5) | Azure Monitor + Log Analytics |
 
 ![alt text](<Arquitectura cc.drawio.png>)
 
