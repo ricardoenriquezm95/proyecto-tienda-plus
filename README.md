@@ -64,9 +64,11 @@ Menos coste operativo: el proveedor asume parches, backups y hardware de la base
 | Cómputo en la nube | Azure Container Apps |
 | Registro de imágenes | Azure Container Registry (ACR) |
 | Persistencia | Azure SQL Database (SQL Server gestionado) — 1 base de datos por microservicio |
-| Infraestructura como código (Hito 3) | Terraform |
-| CI/CD (Hitos 2 y 4) | GitHub Actions |
-| Observabilidad (Hito 5) | Azure Monitor + Log Analytics |
+| Infraestructura como código  | Terraform |
+| CI/CD  | GitHub Actions |
+| Observabilidad  | Azure Monitor + Log Analytics |
+
+
 
 ![alt text](<Arquitectura cc.drawio.png>)
 
