@@ -30,12 +30,52 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 
 | Caracteristicas | Como lo aprovecha Tienda+ |
 |----|---------|
-| Autoservicio bajo demanda  | Todos los recursos se crean y destruyen sin intervención humana del proveedor, desde Terraform y GitHub Actions. Crear un entorno de pruebas es ejecutar Terraform.  | 
+| Autoservicio bajo demanda  | Todos los recursos se crean y destruyen sin intervención humana del proveedor, desde Terraform y GitHub Actions.  | 
 | Acceso amplio a la red  | La API se expone por HTTPS en un endpoint público de Azure, accesible desde cualquier navegador, móvil o cliente HTTP mediante protocolos estándar.   |
 | Asignación común de recursos  | Los contenedores se ejecutan sobre la infraestructura compartida de azure container Apps y la BD sobre un servicio gestionado por azure. | 
 | Rápida elasticidad  | Container Apps escala cada microservicio de forma independiente según peticiones HTTP concurrentes maximo a 5 réplicas y vuelve a 0 cuando no hay tráfico. |
 | Servicio medido  | Azure factura por segundos de vCPU / memoria y número de peticiones y por horas de cómputo y GB de almacenamiento. Azure monitor y cost management muestran el consumo real, lo que permite ajustar recursos y presupuestos. |
 
+## 3.Mapeo de actores NIST SP 500-292
 
+
+
+### Analisis de impacto economico
+-   De Capex A Opex: No habría inversión inicial en servidores, licencias ni centro de datos; solo un gasto mensual variable ligado a las ventas.
+Pago por uso y escalado a cero: Fuera de campaña, los servicios bajan a 0 réplicas y prácticamente no generan coste de cómputo.
+Menos coste operativo: el proveedor asume parches, backups y hardware de la base de datos, por lo que no hace falta un administrador de sistemas dedicado.
+-   Coste estimado: para un trafico bajo: Container Apps el cual contiene una cuota gratuita, una base de datos **Revisar azure pricing** 
+-   Riesgo económico a vigilar: El escalado ilimitado puede disparar la factura; se fijaran un máximo de replicas y alertas de presupuesto en azure cost management.
+
+## 3.Diagrama de arquitectura
+
+## 4.Especificación de API REST
+
+## API Endpoints
+
+#### Servicio "catalog-service"
+
+| TIPO | RUTA | RESPUESTA | DESCRIPCIÓN | PAYLOADS |
+|-------|-------|------------|-------------|----------|
+| GET | `/api/v1/products/list` | 200 | Listar productos | `[{ "id": 1, "name": "Taza", "price": 12.5, "stock": 40 }]` |
+| GET | `/api/v1/products/{id}` | 200, 404 | Detalle de un producto | `{ "id": 1, "name": "Taza", "price": 12.5, "stock": 40 }` |
+| POST | `/api/v1/products/create` | 201, 422 | Crear producto (admin) | **Petición:** `{ "name": "Taza", "price": 12.5, "stock": 40 }`<br>**Respuesta:** `{ "id": 1, "name": "Taza", "price": 12.5, "stock": 40 }` |
+| PATCH | `/api/v1/products/{id}/stock` | 200, 404 | Ajustar stock (admin) | **Petición:** `{ "delta": -5 }`<br>**Respuesta:** `{ "id": 1, "stock": 35 }` |
+| POST | `/api/v1/products/{id}/reserve` | 200, 404, 409 | Reservar unidades (uso interno) | **Petición:** `{ "quantity": 2 }`<br>**Respuesta:** `{ "id": 1, "stock": 38 }` |
+| POST | `/api/v1/products/{id}/release` | 200, 404 | Liberar unidades (uso interno) | **Petición:** `{ "quantity": 2 }`<br>**Respuesta:** `{ "id": 1, "stock": 40 }` |
+| GET | `/health` | 200, 403 | Estado del servicio (admin) | `{ "status": "ok" }` |
+
+
+#### Servicio "orders-service"
+
+| Tipo | Ruta | Respuestas | Descripción | Payloads |
+|------|------|------------|-------------|----------|
+| POST | `/api/v1/orders/create` | 201, 409, 422 | Crear pedido | **Request:**<br>`{ "customer_email": "ana@example.com", "items": [{ "product_id": 1, "quantity": 2 }] }`<br><br>**Response 201:**<br>`{ "id": 101, "status": "PENDIENTE", "total": 30.25 }` |
+| GET | `/api/v1/orders/{id}` | 200, 404 | Consultar pedido | `{ "id": 101, "customer_email": "ana@example.com", "items": [{ "product_id": 1, "quantity": 2 }], "status": "PENDIENTE", "total": 30.25 }` |
+| GET | `/api/v1/orders?customer_email=` | 200 | Pedidos de un cliente | `[{ "id": 101, "status": "PENDIENTE", "total": 30.25 }]` |
+| POST | `/api/v1/orders/{id}/pay` | 200, 404 | Pagar (simulado) | `{ "id": 101, "status": "PAGADO" }` |
+| POST | `/api/v1/orders/{id}/cancel` | 200, 404, 409 | Cancelar y liberar stock | `{ "id": 101, "status": "CANCELADO" }` |
+| POST | `/api/v1/orders/{id}/ship` | 200, 404, 409 | Marcar como enviado (admin) | `{ "id": 101, "status": "ENVIADO" }` |
+| GET | `/health` | 200, 403 | Estado del servicio (admin) | `{ "status": "ok" }` |
 
 
