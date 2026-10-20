@@ -67,10 +67,11 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 | Infraestructura como código  | Terraform |
 | CI/CD  | GitHub Actions |
 | Observabilidad  | Azure Monitor + Log Analytics |
-<br>
-<br>
+---
+---
 ![alt text](<Arquitectura cc.drawio.png>)
-<br>
+
+---
 ### 5.Especificación de API REST
 
 ##### Servicio "catalog-service"
