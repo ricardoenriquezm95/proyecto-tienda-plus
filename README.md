@@ -14,14 +14,18 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 -	Pago simulado: El pago será simulado y no se integrará una pasarela real.
 
 ### Casos de uso
-ID	ACTOR	CASO DE USO
-C-001	Cliente	Consultar el catálogo y filtrar por categoría.
-C-002	Cliente	Ver el detalle y el stock de un producto.
-C-003	Cliente	Crear un pedido con varios productos.
-C-004	Cliente	Pagar un pedido(simulado).
-C-005	Cliente	Cancelar un pedido pendiente
-C-006	Cliente	Consultar el estado de sus pedidos
-C-007	Administrador	Dar de alta productos y ajustar stock.  
-C-008	Administrador	Marcar un pedido pagado como enviado.
+
+| ID | ACTOR | CASO DE USO |
+|----|---------|---------|
+| C-001  | Cliente  | Consultar el catálogo y filtrar por categoría.    |
+| C-002  | Cliente   | Ver el detalle y el stock de un producto.     |
+| C-003  | Cliente | Crear un pedido con varios productos.    |
+| C-004  | Cliente | Pagar un pedido(simulado).     |
+| C-005  | Cliente | Cancelar un pedido pendiente.   |
+| C-006  | Cliente | Consultar el estado de sus pedidos.     |
+| C-007  | Administrador | Dar de alta productos y ajustar stock.     |
+| C-008  | Administrador | Marcar un pedido pagado como enviado.     |
+
+
 
 
