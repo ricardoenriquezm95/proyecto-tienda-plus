@@ -103,4 +103,11 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 Los errores 404, 409, 422 y 403 usan el mismo formato:
 `{ "detail": "Stock insuficiente" }`
 
+### 6. Gestión del proyecto
+---
+#### Estrategia de ramas
+- `main`: rama estable y protegida. Solo se modifica mediante Pull Request.
+- `feature/<n-issue>-<descripcion>`: una rama por historia de usuario (ej. `feature/5-crear-pedido`).
+- `fix/<n-issue>-<descripcion>`: correcciones.
+- Flujo: `feature/*` -> Pull Request -> merge a `main`.
 
