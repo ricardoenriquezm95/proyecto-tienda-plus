@@ -67,7 +67,7 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 | Infraestructura como código  | Terraform |
 | CI/CD  | GitHub Actions |
 | Observabilidad  | Azure Monitor + Log Analytics |
----
+
 ---
 ![alt text](<Arquitectura cc.drawio.png>)
 
