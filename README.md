@@ -1,10 +1,10 @@
 
-## 1. Descripción del dominio
-### Problema de negocio
+### 1. Descripción del dominio
+#### Problema de negocio
 Tienda+ es una pequeña tienda de productos locales, quiere vender por internet sin comprar ni mantener servidores propios. Sus ventas son muy irregulares: pocas ventas entre semanas y picos fuertes en épocas de campañas puntuales (Black Friday, navidad, rebajas). Con un servidor propio tendría que dimensionar para sus momentos pico y después pagar por los mismos servicios durante todo el año sin utilizar toda la capacidad comprada; con la nube paga solo por lo que usa y escala automáticamente en los picos.
 El problema de negocio no es “gestionar productos de la tienda” sino más bien vender sin sobrevender: cuando hay muchos clientes y compran a la vez el mismo producto, el sistema debe garantizar que no se acepten pedidos sin stock real.
 
-### Lógica de negocio
+#### Lógica de negocio
 -	Reserva de stock: al crear un pedido el servicio de orden de productos pide al servicio de catálogo de productos reservar las unidades. Si algún producto no tiene stock suficiente, el pedido se rechaza completo y se liberan las reservas de producto ya hechas.
 -	Cálculo de pedido: Subtotal por línea y IVA 
 -	Estados del pedido: se considerarán estos estados:
@@ -13,7 +13,7 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 -	Cancelación con devolución de stock: Cancelar un pedido pendiente libera las unidades reservadas.
 -	Pago simulado: El pago será simulado y no se integrará una pasarela real.
 
-### Casos de uso
+#### Casos de uso
 
 | ID | ACTOR | CASO DE USO |
 |----|---------|---------|
@@ -26,7 +26,7 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 | C-007  | Administrador | Dar de alta productos y ajustar stock.     |
 | C-008  | Administrador | Marcar un pedido pagado como enviado.     |
 
-## 2.Justificación NIST SP 800-145
+### 2.Justificación NIST SP 800-145
 
 | Caracteristicas | Como lo aprovecha Tienda+ |
 |----|---------|
@@ -36,24 +36,22 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 | Rápida elasticidad  | Container Apps escala cada microservicio de forma independiente según peticiones HTTP concurrentes maximo a 5 réplicas y vuelve a 0 cuando no hay tráfico. |
 | Servicio medido  | Azure factura por segundos de vCPU / memoria y número de peticiones y por horas de cómputo y GB de almacenamiento. Azure monitor y cost management muestran el consumo real, lo que permite ajustar recursos y presupuestos. |
 
-## 3.Mapeo de actores NIST SP 500-292
+### 3.Mapeo de actores NIST SP 500-292
 
 
 
-### Analisis de impacto economico
+#### Analisis de impacto economico
 -   De Capex A Opex: No habría inversión inicial en servidores, licencias ni centro de datos; solo un gasto mensual variable ligado a las ventas.
 Pago por uso y escalado a cero: Fuera de campaña, los servicios bajan a 0 réplicas y prácticamente no generan coste de cómputo.
 Menos coste operativo: el proveedor asume parches, backups y hardware de la base de datos, por lo que no hace falta un administrador de sistemas dedicado.
 -   Coste estimado: para un trafico bajo: Container Apps el cual contiene una cuota gratuita, una base de datos **Revisar azure pricing** 
 -   Riesgo económico a vigilar: El escalado ilimitado puede disparar la factura; se fijaran un máximo de replicas y alertas de presupuesto en azure cost management.
 
-## 3.Diagrama de arquitectura
+### 4.Diagrama de arquitectura
 
-## 4.Especificación de API REST
+### 5.Especificación de API REST
 
-## API Endpoints
-
-#### Servicio "catalog-service"
+##### Servicio "catalog-service"
 
 | TIPO | RUTA | RESPUESTA | DESCRIPCIÓN | PAYLOADS |
 |-------|-------|------------|-------------|----------|
