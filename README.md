@@ -51,7 +51,7 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 -   De Capex A Opex: No habría inversión inicial en servidores, licencias ni centro de datos; solo un gasto mensual variable ligado a las ventas.
 -   Pago por uso y escalado a cero: Fuera de campaña, los servicios bajan a 0 réplicas y prácticamente no generan coste de cómputo.
 -   Menos coste operativo: el proveedor asume parches, backups y hardware de la base de datos, por lo que no hace falta un administrador de sistemas dedicado.
--   Coste estimado: para un trafico bajo: Container Apps el cual contiene una cuota gratuita, una base de datos **Revisar azure pricing** 
+-   Coste estimado: Para un escenario académico con tráfico bajo, el coste mensual estimado de la infraestructura es de aproximadamente entre 15 € y 30 € al mes. El principal coste corresponde a Azure SQL Database, mientras que Azure Container Apps aprovecha la cuota gratuita y el escalado a cero, reduciendo significativamente el gasto operativo. Azure Container Registry Basic y Azure Monitor generan un coste reducido adecuado para entornos de desarrollo y demostración.
 -   Riesgo económico a vigilar: El escalado ilimitado puede disparar la factura; se fijaran un máximo de replicas y alertas de presupuesto en azure cost management.
 
 ### 4.Diagrama de arquitectura
