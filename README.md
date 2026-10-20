@@ -7,8 +7,8 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 -	Reserva de stock: al crear un pedido el servicio de orden de productos pide al servicio de catálogo de productos reservar las unidades. Si algún producto no tiene stock suficiente, el pedido se rechaza completo y se liberan las reservas de producto ya hechas.
 -	Cálculo de pedido: Subtotal por línea y IVA 
 -	Estados del pedido: se considerarán estos estados:
-    o	PENDIENTE – PAGADO – ENVIADO.
-    o	PENDIENTE – CANCELADO.
+    -	PENDIENTE – PAGADO – ENVIADO.
+    -	PENDIENTE – CANCELADO.
 -	Cancelación con devolución de stock: Cancelar un pedido pendiente libera las unidades reservadas.
 -	Pago simulado: El pago será simulado y no se integrará una pasarela real.
 
