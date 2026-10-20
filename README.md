@@ -63,7 +63,7 @@ El problema de negocio no es “gestionar productos de la tienda” sino más bi
 | Contenedores | Docker + Docker Compose (entorno local) |
 | Cómputo en la nube | Azure Container Apps |
 | Registro de imágenes | Azure Container Registry (ACR) |
-| Persistencia | Azure SQL Database (SQL Server gestionado) — 1 base de datos por microservicio |
+| Persistencia | Azure SQL Database — 1 base de datos por microservicio |
 | Infraestructura como código  | Terraform |
 | CI/CD  | GitHub Actions |
 | Observabilidad  | Azure Monitor + Log Analytics |
