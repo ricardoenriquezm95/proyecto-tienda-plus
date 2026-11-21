@@ -1,0 +1,6 @@
+# Dependencias de ejecución 
+fastapi==0.115.12
+pydantic==2.10.6
+uvicorn[standard]==0.34.0
+SQLAlchemy==2.0.36
+pymssql==2.3.2
