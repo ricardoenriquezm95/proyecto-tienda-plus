@@ -1,0 +1,105 @@
+### =====================================================================
+### Tienda+ · catalog-service · peticiones de prueba
+### Requiere la extensión "REST Client" de VS Code (humao.rest-client).
+### Pulsa "Send Request" encima de cada petición.
+### Todo entra por el API Gateway Nginx (puerto 8080).
+### =====================================================================
+
+@baseUrl = http://localhost:8080
+# Mismo valor que ADMIN_TOKEN de tu .env
+@adminToken = cambia-este-token-de-admin
+@internalToken = cambia-este-token-interno
+
+### 1. Sonda de vida (pública)
+GET {{baseUrl}}/catalog/health/live
+
+### 2. Estado completo del servicio (admin)
+GET {{baseUrl}}/catalog/health
+X-Admin-Token: {{adminToken}}
+
+### 3. Listar todos los productos (C-001)
+GET {{baseUrl}}/api/v1/products/list
+
+### 4. Filtrar productos por categoría (C-001)
+GET {{baseUrl}}/api/v1/products/list?category=menaje
+
+### 5. Detalle y stock de un producto (C-002)
+GET {{baseUrl}}/api/v1/products/1
+
+### 6. Producto inexistente -> 404
+GET {{baseUrl}}/api/v1/products/999
+
+### 7. Crear producto (admin, C-007) -> 201
+POST {{baseUrl}}/api/v1/products/create
+Content-Type: application/json
+X-Admin-Token: {{adminToken}}
+
+{
+  "name": "Taza",
+  "category": "menaje",
+  "price": 12.5,
+  "stock": 40
+}
+
+### 8. Crear producto sin token -> 403
+POST {{baseUrl}}/api/v1/products/create
+Content-Type: application/json
+
+{
+  "name": "Taza",
+  "price": 12.5,
+  "stock": 40
+}
+
+### 9. Crear producto con datos no válidos -> 422
+POST {{baseUrl}}/api/v1/products/create
+Content-Type: application/json
+X-Admin-Token: {{adminToken}}
+
+{
+  "name": "",
+  "price": -1
+}
+
+### 10. Ajustar stock (admin, C-007)
+PATCH {{baseUrl}}/api/v1/products/1/stock
+Content-Type: application/json
+X-Admin-Token: {{adminToken}}
+
+{
+  "delta": -5
+}
+
+### 11. Reservar desde fuera -> 403: el gateway bloquea los endpoints internos
+###     (solo orders-service puede llamarlos, por la red interna de Docker)
+POST {{baseUrl}}/api/v1/products/1/reserve
+Content-Type: application/json
+X-Internal-Token: {{internalToken}}
+
+{
+  "quantity": 2
+}
+
+### 12. Igual de bloqueado -> 403
+POST {{baseUrl}}/api/v1/products/1/reserve
+Content-Type: application/json
+X-Internal-Token: {{internalToken}}
+
+{
+  "quantity": 100000
+}
+
+### 13. Liberar desde fuera -> 403
+POST {{baseUrl}}/api/v1/products/1/release
+Content-Type: application/json
+X-Internal-Token: {{internalToken}}
+
+{
+  "quantity": 2
+}
+
+### 14. Salud del propio gateway
+GET {{baseUrl}}/healthz
+
+### 15. Ruta inexistente -> 404 del gateway
+GET {{baseUrl}}/no-existe
