@@ -1,16 +1,3 @@
-"""Acceso a datos y reglas de stock.
-
-La clave del negocio ("vender sin sobrevender") está en ``_apply_delta``: el stock se
-modifica con un único UPDATE condicional (compare-and-set)::
-
-    UPDATE products SET stock = stock + :delta
-    WHERE id = :id AND stock + :delta >= 0
-
-El motor de BD bloquea la fila durante el UPDATE, de modo que dos reservas concurrentes
-nunca pueden leer el mismo stock y dejarlo en negativo. Si no se actualiza ninguna fila,
-o el producto no existe o no hay stock suficiente.
-"""
-
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 

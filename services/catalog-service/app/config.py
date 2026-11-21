@@ -1,4 +1,4 @@
-"""Configuración del servicio leída de variables de entorno (factor III de 12-factor)."""
+"""Configuración del servicio leída de variables de entorno."""
 
 from __future__ import annotations
 

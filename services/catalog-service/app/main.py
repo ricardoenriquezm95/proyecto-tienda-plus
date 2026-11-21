@@ -1,9 +1,3 @@
-"""Punto de entrada del catalog-service.
-
-Se arranca con ``uvicorn app.main:create_app --factory`` para que la configuración se lea
-al iniciar el proceso (y no al importar el módulo), lo que facilita los tests.
-"""
-
 import logging
 from contextlib import asynccontextmanager
 from typing import Annotated

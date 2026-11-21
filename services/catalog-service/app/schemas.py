@@ -1,4 +1,4 @@
-"""Contratos de entrada/salida de la API (ver sección 5 del README)."""
+"""Contratos de entrada/salida de la API."""
 
 from decimal import Decimal
 from typing import Annotated

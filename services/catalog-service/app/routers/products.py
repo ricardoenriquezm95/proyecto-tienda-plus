@@ -1,4 +1,4 @@
-"""Endpoints /api/v1/products (casos de uso C-001, C-002, C-007 y reserva interna)."""
+"""Endpoints /api/v1/products."""
 
 from typing import Annotated
 
