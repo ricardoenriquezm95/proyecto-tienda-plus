@@ -1,0 +1,140 @@
+### =====================================================================
+### Tienda+ · orders-service · peticiones de prueba
+### Requiere la extensión "REST Client" de VS Code (humao.rest-client).
+### Antes de empezar, levanta el entorno: docker compose up -d --build
+### Todo entra por el API Gateway Nginx (puerto 8080).
+### Ejecuta las peticiones EN ORDEN: las de pagar/enviar/cancelar usan el id
+### del pedido que devuelve la petición de crear (@name).
+### =====================================================================
+
+@ordersUrl = http://localhost:8080
+@catalogUrl = http://localhost:8080
+# Mismo valor que ADMIN_TOKEN de tu .env
+@adminToken = cambia-este-token-de-admin
+@email = ana@example.com
+
+### 1. Sonda de vida (pública)
+GET {{ordersUrl}}/orders/health/live
+
+### 2. Estado completo del servicio (admin)
+GET {{ordersUrl}}/orders/health
+X-Admin-Token: {{adminToken}}
+
+
+### ================= FLUJO FELIZ: crear -> pagar -> enviar =================
+
+### 3. Stock del producto 1 ANTES de comprar
+GET {{catalogUrl}}/api/v1/products/1
+
+### 4. Crear pedido (C-003) -> 201, PENDIENTE, total 30.25 (2 x 12,50 + 21 % IVA)
+# @name pedido
+POST {{ordersUrl}}/api/v1/orders/create
+Content-Type: application/json
+
+{
+  "customer_email": "{{email}}",
+  "items": [
+    { "product_id": 1, "quantity": 2 }
+  ]
+}
+
+### 5. Stock del producto 1 DESPUÉS de comprar (ha bajado 2 unidades)
+GET {{catalogUrl}}/api/v1/products/1
+
+### 6. Consultar el pedido completo (C-006): líneas, subtotal, IVA y total
+GET {{ordersUrl}}/api/v1/orders/{{pedido.response.body.$.id}}
+
+### 7. Listar los pedidos de un cliente (C-006)
+GET {{ordersUrl}}/api/v1/orders?customer_email={{email}}
+
+### 8. Pagar el pedido (simulado, C-004) -> PAGADO
+POST {{ordersUrl}}/api/v1/orders/{{pedido.response.body.$.id}}/pay
+
+### 9. Pagar otra vez -> 409 (ya está PAGADO)
+POST {{ordersUrl}}/api/v1/orders/{{pedido.response.body.$.id}}/pay
+
+### 10. Enviar SIN token de admin -> 403
+POST {{ordersUrl}}/api/v1/orders/{{pedido.response.body.$.id}}/ship
+
+### 11. Enviar con token de admin (C-008) -> ENVIADO
+POST {{ordersUrl}}/api/v1/orders/{{pedido.response.body.$.id}}/ship
+X-Admin-Token: {{adminToken}}
+
+
+### ================= CANCELACIÓN: el stock vuelve al catálogo =============
+
+### 12. Crear un pedido de varios productos
+# @name pedidoCancelar
+POST {{ordersUrl}}/api/v1/orders/create
+Content-Type: application/json
+
+{
+  "customer_email": "{{email}}",
+  "items": [
+    { "product_id": 1, "quantity": 3 },
+    { "product_id": 4, "quantity": 2 }
+  ]
+}
+
+### 13. Cancelar (C-005) -> CANCELADO y se liberan las 3 + 2 unidades
+POST {{ordersUrl}}/api/v1/orders/{{pedidoCancelar.response.body.$.id}}/cancel
+
+### 14. Comprobar que el stock ha vuelto
+GET {{catalogUrl}}/api/v1/products/1
+
+### 15. Pagar un pedido cancelado -> 409
+POST {{ordersUrl}}/api/v1/orders/{{pedidoCancelar.response.body.$.id}}/pay
+
+### 16. Cancelar dos veces -> 409 (el stock NO se libera dos veces)
+POST {{ordersUrl}}/api/v1/orders/{{pedidoCancelar.response.body.$.id}}/cancel
+
+
+### ================= ERRORES Y REGLAS DE NEGOCIO ==========================
+
+### 17. Stock insuficiente -> 409. El pedido se rechaza COMPLETO:
+###     la reserva del producto 1 se compensa (revisa su stock después).
+POST {{ordersUrl}}/api/v1/orders/create
+Content-Type: application/json
+
+{
+  "customer_email": "{{email}}",
+  "items": [
+    { "product_id": 1, "quantity": 1 },
+    { "product_id": 5, "quantity": 100000 }
+  ]
+}
+
+### 18. Producto inexistente -> 422 "El producto 999 no existe"
+POST {{ordersUrl}}/api/v1/orders/create
+Content-Type: application/json
+
+{
+  "customer_email": "{{email}}",
+  "items": [ { "product_id": 999, "quantity": 1 } ]
+}
+
+### 19. Email no válido / sin líneas -> 422 "Datos de entrada no válidos"
+POST {{ordersUrl}}/api/v1/orders/create
+Content-Type: application/json
+
+{
+  "customer_email": "esto-no-es-un-email",
+  "items": []
+}
+
+### 20. Enviar un pedido PENDIENTE (sin pagar) -> 409
+# @name pedidoSinPagar
+POST {{ordersUrl}}/api/v1/orders/create
+Content-Type: application/json
+
+{
+  "customer_email": "{{email}}",
+  "items": [ { "product_id": 2, "quantity": 1 } ]
+}
+
+###
+POST {{ordersUrl}}/api/v1/orders/{{pedidoSinPagar.response.body.$.id}}/ship
+X-Admin-Token: {{adminToken}}
+
+### 21. Pedido inexistente -> 404
+GET {{ordersUrl}}/api/v1/orders/99999
