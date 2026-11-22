@@ -1,0 +1,229 @@
+# =====================================================================================
+# Tienda+ · Integración Continua
+#
+#   lint ──┐
+#          ├──> e2e (docker compose + SQL Server) ──> publish (GHCR, solo main y tags)
+#   test ──┘
+#
+# Se ejecuta en push y pull_request a main y develop (flujo feature -> develop -> main).
+#
+# Imágenes publicadas:
+#   ghcr.io/<owner>/tienda-plus-catalog-service
+#   ghcr.io/<owner>/tienda-plus-orders-service
+#   ghcr.io/<owner>/tienda-plus-gateway        (API Gateway Nginx)
+# Etiquetas: sha-<commit>, latest (rama main) y X.Y.Z / X.Y (tags git vX.Y.Z).
+# =====================================================================================
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+    tags: ["v*.*.*"]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+  # ---------------------------------------------------------------------------------
+  lint:
+    name: Lint (Python, Dockerfile, Nginx, Compose)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Instalar ruff
+        run: pip install ruff==0.16.9
+
+      - name: Ruff · análisis estático
+        run: |
+          ruff check services/catalog-service --output-format=github
+          ruff check services/orders-service --output-format=github
+          ruff check tests/e2e --output-format=github
+
+      - name: Ruff · formato
+        run: |
+          ruff format --check services/catalog-service
+          ruff format --check services/orders-service
+
+      - name: Hadolint · catalog-service/Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/catalog-service/Dockerfile
+          config: .hadolint.yaml
+
+      - name: Hadolint · orders-service/Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/orders-service/Dockerfile
+          config: .hadolint.yaml
+
+      - name: Hadolint · gateway/Dockerfile
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/gateway/Dockerfile
+          config: .hadolint.yaml
+
+      - name: Nginx · validar sintaxis de nginx.conf (nginx -t)
+        run: |
+          docker run --rm \
+            --add-host catalog-service:127.0.0.1 --add-host orders-service:127.0.0.1 \
+            -v "$PWD/services/gateway/nginx.conf:/etc/nginx/nginx.conf:ro" \
+            nginxinc/nginx-unprivileged:1.30-alpine nginx -t
+
+      - name: Validar sintaxis de compose.yaml
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+
+  # ---------------------------------------------------------------------------------
+  test:
+    name: Tests unitarios e integración · ${{ matrix.service }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service: [catalog-service, orders-service]
+    defaults:
+      run:
+        working-directory: services/${{ matrix.service }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: services/${{ matrix.service }}/requirements*.txt
+
+      - name: Instalar dependencias
+        run: pip install -r requirements-dev.txt
+
+      - name: Pruebas unitarias
+        run: pytest -m unit
+
+      - name: Pruebas de integración + cobertura
+        run: >-
+          pytest --cov --cov-report=term-missing --cov-report=xml
+          --junitxml=junit.xml
+
+      - name: Publicar informes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-reports-${{ matrix.service }}
+          path: |
+            services/${{ matrix.service }}/junit.xml
+            services/${{ matrix.service }}/coverage.xml
+          if-no-files-found: ignore
+
+  # ---------------------------------------------------------------------------------
+  e2e:
+    name: Integración extremo a extremo (Docker Compose)
+    needs: [lint, test]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Preparar .env (valores de ejemplo, sin secretos reales)
+        run: cp .env.example .env
+
+      - name: Levantar el entorno completo
+        run: |
+          docker compose up -d --build
+          bash scripts/wait-for-services.sh 300
+          docker compose ps -a
+
+      - name: Ejecutar pruebas e2e
+        run: |
+          pip install -r tests/e2e/requirements.txt
+          set -a; source .env; set +a
+          pytest tests/e2e -v
+
+      - name: Comprobar persistencia del volumen tras reiniciar
+        run: |
+          set -a; source .env; set +a
+          NAME="persistencia-${GITHUB_SHA::7}"
+          curl -fsS -X POST localhost:8080/api/v1/products/create \
+            -H "X-Admin-Token: $ADMIN_TOKEN" -H "Content-Type: application/json" \
+            -d "{\"name\": \"$NAME\", \"price\": 1.5, \"stock\": 1}"
+          docker compose down          # sin -v: el volumen se conserva
+          docker compose up -d
+          bash scripts/wait-for-services.sh 300
+          curl -fsS localhost:8080/api/v1/products/list | grep -q "$NAME"
+          echo "OK: el producto $NAME ha sobrevivido al reinicio"
+
+      - name: Logs de los contenedores (si falla)
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Apagar el entorno
+        if: always()
+        run: docker compose down -v
+
+  # ---------------------------------------------------------------------------------
+  publish:
+    name: Publicar imagen · ${{ matrix.service }}
+    needs: [e2e]
+    # Solo se publican imágenes desde main (latest + sha) y desde tags vX.Y.Z.
+    # En develop y en los pull requests la CI valida, pero no publica.
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        service: [catalog-service, orders-service, gateway]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - name: Login en GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Calcular etiquetas y metadatos
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository_owner }}/tienda-plus-${{ matrix.service }}
+          tags: |
+            type=sha,format=short,prefix=sha-
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Construir y publicar
+        uses: docker/build-push-action@v6
+        with:
+          context: services/${{ matrix.service }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha,scope=${{ matrix.service }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.service }}
+          provenance: true
+          sbom: true
