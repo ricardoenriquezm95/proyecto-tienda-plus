@@ -1,6 +1,3 @@
-#!/usr/bin/env bash
-# Espera a que el gateway y los dos microservicios respondan (a través del gateway).
-# Uso: scripts/wait-for-services.sh [timeout_segundos]
 set -euo pipefail
 TIMEOUT="${1:-300}"
 GATEWAY_URL="${GATEWAY_URL:-http://localhost:8080}"

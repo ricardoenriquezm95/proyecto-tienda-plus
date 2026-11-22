@@ -1,3 +1,1 @@
-# Configuración de hadolint (linter de Dockerfiles). Cualquier aviso de nivel
-# "warning" o superior hace fallar la CI.
 failure-threshold: warning
