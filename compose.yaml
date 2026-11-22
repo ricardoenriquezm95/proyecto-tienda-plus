@@ -1,39 +1,9 @@
 # =====================================================================================
-# Tienda+ · entorno local completo
-#
-#   cp .env.example .env        # (en Windows: copy .env.example .env)
-#   docker compose up -d --build
-#
-# Entrada única: API Gateway Nginx (equivalente local del Ingress HTTPS de Azure)
-#   http://localhost:8080/api/v1/products  -> catalog-service
-#   http://localhost:8080/api/v1/orders    -> orders-service
-#   Swagger: http://localhost:8080/catalog/docs  y  http://localhost:8080/orders/docs
-#
-# Patrón "database-per-service" con UN contenedor de base de datos por microservicio:
-#
-#   catalog-service ──▶ catalog-db  (SQL Server 2022, BD catalog_db, volumen propio)
-#   orders-service  ──▶ orders-db   (SQL Server 2022, BD orders_db,  volumen propio)
-#   orders-service  ──▶ catalog-service  (REST interno: reserve / release)
-#
-# Contenedores (7):
-#   gateway                             Nginx: único puerto publicado (8080)
-#   catalog-db / orders-db              SQL Server 2022 (equivalente local de Azure SQL)
-#   catalog-db-init / orders-db-init    tareas únicas: crean la BD y su usuario, y terminan
-#   catalog-service                     API de catálogo y stock (sin puerto publicado)
-#   orders-service                      API de pedidos          (sin puerto publicado)
-#
-# Redes:
-#   edge         red de aplicación: gateway -> APIs y la llamada REST interna
-#                orders-service -> catalog-service (DNS por nombre de servicio)
-#   catalog-data red interna (internal: true): SOLO catalog-service ve a catalog-db
-#   orders-data  red interna (internal: true): SOLO orders-service ve a orders-db
-#   Ningún servicio puede llegar a la base de datos del otro, ni siquiera por red.
-#
-# Requisitos: cada SQL Server pide unos 2 GB de RAM -> asigna al menos 4-5 GB a Docker.
+# Tienda+ · entorno local
 # =====================================================================================
 name: tienda-plus
 
-# --- Plantillas reutilizables ----------------------------------------------------------
+# -------------------------------------------------------------------------------------
 x-mssql: &mssql
   image: mcr.microsoft.com/mssql/server:2022-latest
   platform: linux/amd64
@@ -78,7 +48,7 @@ x-api-hardening: &api-hardening
 
 services:
   # ===================================================================================
-  # catalog-service + su base de datos
+  # catalog-service + bd
   # ===================================================================================
   catalog-db:
     <<: *mssql
@@ -131,7 +101,7 @@ services:
       - catalog-data
 
   # ===================================================================================
-  # orders-service + su base de datos
+  # orders-service + bd
   # ===================================================================================
   orders-db:
     <<: *mssql
@@ -187,7 +157,7 @@ services:
       - orders-data
 
   # ===================================================================================
-  # API Gateway: única puerta de entrada
+  # API Gateway
   # ===================================================================================
   gateway:
     <<: *api-hardening
