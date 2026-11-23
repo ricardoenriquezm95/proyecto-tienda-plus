@@ -142,7 +142,14 @@ jobs:
 
       - name: Levantar el entorno completo
         run: |
-          docker compose up -d --build
+          docker compose build
+          if ! docker compose up -d; then
+            echo "===== Healthcheck de catalog-db ====="
+            docker inspect --format '{{json .State.Health}}' tienda-plus-catalog-db-1 | python3 -m json.tool
+            echo "===== Logs de catalog-db ====="
+            docker compose logs --no-color --tail 60 catalog-db
+            exit 1
+          fi
           bash scripts/wait-for-services.sh 300
           docker compose ps -a
 
