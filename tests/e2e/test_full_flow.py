@@ -143,6 +143,8 @@ def test_concurrent_orders_never_oversell(api):
     with ThreadPoolExecutor(max_workers=20) as pool:
         codes = list(pool.map(buy, range(20)))
 
-    assert codes.count(201) == 5
-    assert codes.count(409) == 15
+    # Regla de negocio: exactamente 5 compras aceptadas y el stock a 0 (nunca se sobrevende).
+    assert codes.count(201) == 5, codes
+    # El resto se rechaza: 409 (sin stock) o 429 (límite de peticiones del gateway).
+    assert all(code in (409, 429) for code in codes if code != 201), codes
     assert stock_of(api, pid) == 0
