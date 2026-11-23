@@ -106,8 +106,70 @@ Los errores 404, 409, 422 y 403 usan el mismo formato:
 ### 6. Gestión del proyecto
 ---
 #### Estrategia de ramas
-- `main`: rama estable y protegida. Solo se modifica mediante Pull Request.
-- `feature/<n-issue>-<descripcion>`: una rama por historia de usuario (ej. `feature/5-crear-pedido`).
-- `fix/<n-issue>-<descripcion>`: correcciones.
-- Flujo: `feature/*` -> Pull Request -> merge a `main`.
+- `main`: rama estable y protegida (versiones entregadas). Solo se modifica mediante Pull Request desde `develop`.
+- `develop`: rama de integración del desarrollo. Recibe las ramas de trabajo mediante Pull Request.
+- `feature/<n-issue>-<descripcion>`: una rama por historia de usuario (ej. `feature/6-orders-service`), creada desde `develop`.
+- `fix/<n-issue>-<descripcion>`: correcciones, también desde `develop`.
+- `docs/<n-issue>-<descripcion>`: cambios solo de documentación.
+- Flujo: `feature/*` -> Pull Request (CI en verde) -> `develop` -> Pull Request de versión -> `main` -> tag `vX.Y.Z`.
+- La CI se ejecuta en cada push y Pull Request a `develop` y `main`; las imágenes solo se publican desde `main` y los tags.
 
+---
+## Hito 2 
+---
+#### Estructura del repositorio
+```
+.
+├── compose.yaml                  # Entorno local completo (un único comando)
+├── .env.example                  # Variables de las credenciales
+├── .hadolint.yaml                
+├── .github/workflows/ci.yml      # Pipeline de CI
+├── db/init/create-database.sql  # Crea la BD y el usuario de un servicio 
+├── scripts/wait-for-services.sh  # Espera a que las APIs estén listas (CI)
+├── tests/e2e/                    # Pruebas extremo a extremo contra Docker Compose
+└── services/
+    ├── gateway/                  # API Gateway Nginx · puerto 8080 (única entrada)
+    │   └── nginx.conf - Dockerfile
+    ├── catalog-service/          # FastAPI - puerto 8000 (interno)
+    │   ├── app/                  # config, modelos, esquemas, repositorio, routers
+    │   ├── tests/unit/           # pruebas unitarias
+    │   ├── tests/integration/    # API completa con BD SQLite en memoria
+    │   ├── Dockerfile · .dockerignore · requirements*.txt · pyproject.toml
+    └── orders-service/           # FastAPI - puerto 8001 (interno)
+        ├── app/                  # dominio , cliente del catálogo, saga
+        ├── tests/unit/ - tests/integration/   # catálogo simulado con httpx.MockTransport
+        └── Dockerfile - .dockerignore - requirements*.txt - pyproject.toml
+```
+
+#### Arrancar el entorno local
+Requisitos: Docker Desktop (o Docker Engine + Compose v2).
+```bash
+cp .env.example .env   
+docker compose up -d --build
+```
+Todo entra por el **API Gateway** en el puerto **8080** . Los microservicios no publican puertos externamente.
+
+| Ruta en el gateway | Destino |
+|---|---|
+| http://localhost:8080/api/v1/products/... | catalog-service |
+| http://localhost:8080/api/v1/orders/... | orders-service |
+| http://localhost:8080/catalog/docs | Swagger de catalog-service |
+| http://localhost:8080/orders/docs | Swagger de orders-service |
+| http://localhost:8080/healthz | Salud del gateway |
+
+La primera vez los dos SQL Server tardan en arrancar. Con `SEED_DEMO_DATA=true` el catálogo se rellena con 5 productos de ejemplo.
+
+
+#### Ejecutar las pruebas en local
+```bash
+cd services/catalog-service          # o services/orders-service
+py -3.13 -m venv .venv                
+.venv\Scripts\Activate.ps1            
+python -m pip install -r requirements-dev.txt
+pytest --cov
+ruff check . && ruff format --check .
+
+# Pruebas e2e desde la raíz del repo:
+pip install -r tests/e2e/requirements.txt
+pytest tests/e2e -v
+```
